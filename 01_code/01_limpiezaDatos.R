@@ -7,7 +7,7 @@ cat("4: Inspección de variables y missing values\n")
 # Convertir a tibble (mejor impresión en consola)
 db <- as_tibble(df_final)
 
-ss# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # 5.1 Dimensiones y estructura general del dataset
 # -----------------------------------------------------------------------------
 
