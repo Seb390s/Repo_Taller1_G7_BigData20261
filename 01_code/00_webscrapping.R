@@ -1,6 +1,6 @@
 #Código webscrapping con la data del taller 1 BigData
 #(Sebastián Rodríguez, Hernan Yepez y Michael Salcedo)
-
+#
 
 # =============================================================================
 # SECCIÓN 0: Descargue y cargue de paquetes
