@@ -29,6 +29,9 @@ modelo2 <- lm(
 )
 stargazer(modelo2, type = "text")
 
+b1m2 <- coef(modelo2)["age"]
+b2m2 <- coef(modelo2)["agecua"]
+
 age_pick_m2 <- -b1m2 / (2*b2m2)
 age_pick_m2
 
@@ -44,7 +47,7 @@ base$yhatm2 <-
   coefs["totalHoursWorked"] * mean_hours +
   coefs["relab"] * mean_relab
 
-ggplot(base, aes(x = age, y = yhat_m2)) +
+ggplot(base, aes(x = age, y = yhatm2)) +
   geom_line()
 
 ggplot(base, aes(x = age)) +

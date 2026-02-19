@@ -27,7 +27,7 @@ print(table(df_difsal$female, useNA = "ifany"))
 # --------------------------------------------------------------
 # 2) Variable dependiente: log salario/ingreso
 #    - Usamos log(y_total_m) como en tu sección 1
-#    - log() requiere valores > 0; los <=0 se ponen como NA
+#    - log() requiere valores > 0; los <=0 se ponen como NA (esto se puede quitar)
 # --------------------------------------------------------------
 df_difsal <- df_difsal %>%
   dplyr::mutate(
@@ -73,7 +73,7 @@ gap_incond_pct <- 100 * (exp(coef(modelo3)["female"]) - 1)
 cat("\nGap incondicional (%):", gap_incond_pct, "\n")
 
 # --------------------------------------------------------------
-# 5) MODELO 4: Brecha CONDICIONAL (con controles W)
+# 5) MODELO 4: Brecha CONDICIONAL (con controles W) (Prergunto, pero creo si hay que quitar el else)
 # --------------------------------------------------------------
 if (has_hours) {
   modelo4 <- lm(
