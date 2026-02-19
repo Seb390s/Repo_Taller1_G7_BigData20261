@@ -30,7 +30,8 @@ required_packages <- c(
   "httr", #Hace solicitudes http a urls
   "tidyverse",
   "magrittr",
-  "dplyr"
+  "dplyr",
+  "stargazer"
 )
 
 # Función auxiliar para instalar paquetes si no están disponibles ----
@@ -58,3 +59,4 @@ lapply(required_packages, function(pkg) {
 
 source("00_webscrapping.R")
 source("01_cleaner_usen_este.R")
+source("02_seccion1.R")
