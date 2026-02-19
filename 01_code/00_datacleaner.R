@@ -173,9 +173,54 @@ var_overview %>%
 # ==============================================================================
 # 5.6 filtrar datos por edad mayor a 18
 # ==============================================================================
-db_dummy <- dplyr::filter(db,age >= 18)
-# ==============================================================================
-# 5.7 Clean data
+
+df_cl <- dplyr::filter(db,age >= 18)
+#------------------------------------------------------------------------------
+# filtrar por ingreso = 0, ya que esto se puede interpretar como inactivo
+# ===================
+## Datos con ingreso total 0, convertir en 1, no perturba la muestra
+df_cl <- dplyr::filter(db,ingtot >= 1)
+# w <-- se toma como ingresos las columnas de ingtot
+w = df_cl[,"ingtot"]
+w_log = log(w)
+#hist(w$ingtot)
+# age <-- se toma para la edad
+age <- as.list(df_cl[,"age"])
+# age <-- primer plot
+plot(age$age,w_log$ingtot) 
+##============================================================================
+plot(df_cl$hoursWorkUsual,df_cl$age)
+hist(
+  df_cl$age,
+  main = "Histograma de edad",
+  xlab = "Edad",
+  col = "lightblue",
+  border = "white"
+)
+##============================================================================
+# Unconditional age-labor income profile
+##================
+df_cl<-df_cl %>% mutate(ingtot_log = log(ingtot),
+                        age2 = age^2)
+
+#===========
+# Regresion
+mod1<-lm(ingtot_log~age+age^2,df_cl)
+#liberías
+require("pacman")
+p_load("tidyverse","stargazer")
+
+stargazer(mod1,type="text")
+
+plot(df_cl$age_norm, df_cl$ingtot_log,
+     xlab = "Age",
+     ylab = "Income",
+     main = "Age vs Income")
+
+abline(mod1, col = "red", lwd = 2)
+
+
+                      
 # ==============================================================================
 
 
