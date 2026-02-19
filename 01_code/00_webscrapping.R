@@ -45,4 +45,6 @@ for (i in 1:10) {
   GEIH2018 <- rbind(GEIH2018, tabla_i) #Pega las filas debajo de las filas que ya se habian cargado en el df
 }
 
-GEIH2018
+cat("GEIH2018 listo | filas:", nrow(GEIH2018), "| cols:", ncol(GEIH2018), "\n")
+print(GEIH2018[1:5, 1:5])
+
