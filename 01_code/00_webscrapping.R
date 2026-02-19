@@ -1,36 +1,4 @@
 #Código webscrapping con la data del taller 1 BigData
-#(Sebastián Rodríguez, Hernan Yepez y Michael Salcedo)
-#
-
-# =============================================================================
-# SECCIÓN 0: Descargue y cargue de paquetes
-# =============================================================================
-
-rm(list = ls())
-
-# Lista de paquetes requeridos para el análisis completo
-required_packages <- c(
-  "rvest",      # Para web scraping
-  "httr" #Hace solicitudes http a urls
-)
-
-# Función auxiliar para instalar paquetes si no están disponibles
-install_if_missing <- function(packages) {
-  new_packages <- packages[!(packages %in% installed.packages()[,"Package"])]
-  if(length(new_packages)) {
-    cat("Instalando paquetes faltantes:", paste(new_packages, collapse=", "), "\n")
-    install.packages(new_packages)
-  } else {
-    cat("Todos los paquetes ya están instalados.\n")
-  }
-}
-install_if_missing(required_packages)
-
-# Cargar todas las librerías necesarias
-lapply(required_packages, function(pkg) {
-  cat("Cargando paquete:", pkg, "...\n")
-  library(pkg, character.only = TRUE)
-})
 
 # =============================================================================
 # SECCIÓN 1: Exploración de los elementos de la página
@@ -71,6 +39,8 @@ for (i in 1:10) {
   
   tabla_i <- tabs[[1]]              #Accede a la primera tabla
   names(tabla_i) <- make.names(names(tabla_i), unique = TRUE) #transforma los nombres de las columnas para que sean válidas
+  
+  tabla_i$chunk <- i #Para saber de que chunk viene la observación
 
   GEIH2018 <- rbind(GEIH2018, tabla_i) #Pega las filas debajo de las filas que ya se habian cargado en el df
 }

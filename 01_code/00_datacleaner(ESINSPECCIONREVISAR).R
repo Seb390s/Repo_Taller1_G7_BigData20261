@@ -1,5 +1,4 @@
-#Código webscrapping con la data del taller 1 BigData
-#(Sebastián Rodríguez, Hernan Yepez y Michael Salcedo)
+#ESTO NO ES CLEANER, ES INSPECCIÓN
 
 # =============================================================================
 # SECCIÓN 3: Limpieza de datos
@@ -20,11 +19,12 @@ db <- as_tibble(db_final)
 # ----------------------------------------------------------------------------
 ## SECCIÓN 3.1: Dimensiones y estructura general del dataset
 # ----------------------------------------------------------------------------
-cat("\nDimensiones del dataset (filas, columnas):\n")
-print(dim(db))
-
-cat("\nEstructura de las variables:\n")
-str(db)
+#Creo que no lo necesitamos
+# cat("\nDimensiones del dataset (filas, columnas):\n")
+# print(dim(db))
+# 
+# cat("\nEstructura de las variables:\n")
+# str(db)
 
 # -----------------------------------------------------------------------------
 # 3.2 Tipo de variable por columna
@@ -71,12 +71,12 @@ missing_summary %>%
 # -----------------------------------------------------------------------------
 # 3.4 Variables sin missing values
 # -----------------------------------------------------------------------------
-
-cat("\nVariables sin valores faltantes:\n")
-missing_summary %>%
-  filter(n_missing == 0) %>%
-  select(variable) %>%
-  print(n=22)
+# No es relevante
+# cat("\nVariables sin valores faltantes:\n")
+# missing_summary %>%
+#   filter(n_missing == 0) %>%
+#   select(variable) %>%
+#   print(n=22)
 
 # -----------------------------------------------------------------------------
 # 3.5 Tabla consolidada: tipo de variable + missing values
@@ -102,7 +102,7 @@ df_cl <- dplyr::filter(db,age >= 18)
 #------------------------------------------------------------------------------
 # filtrar por ingreso = 0, ya que esto se puede interpretar como inactivo
 # ===================
-## Datos con ingreso total 0, convertir en 1, no perturba la muestra
+## Datos con ingreso total 0, convertir en 1, no perturba la muestra (NOOOOOO, SI PERTURBA LA MUESTRA)
 df_cl <- dplyr::filter(db,ingtot >= 1)
 # w <-- se toma como ingresos las columnas de ingtot
 w = df_cl[,"ingtot"]
