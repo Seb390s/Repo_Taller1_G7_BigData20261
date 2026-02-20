@@ -18,34 +18,42 @@ base$yhatm1 <- predict(modelo1, newdata = base)
 # ===============================================
 
 #Modelo con total hours worked y employment type
+
 modelo2 <- lm(
   logw ~ age + agecua + totalHoursWorked + relab,
   data = base
 )
+modelo2
 stargazer(modelo2, type = "text")
 
-b1m2 <- coef(modelo2)["age"]
-b2m2 <- coef(modelo2)["agecua"]
+#Las categorías 6 y 7 NO TIENEN
 
-age_pick_m2 <- -b1m2 / (2*b2m2)
-age_pick_m2
+# b1m2 <- coef(modelo2)["age"] Esto no va
+# b2m2 <- coef(modelo2)["agecua"] Esto no va
+
+#age_pick_m2 <- -b1m2 / (2*b2m2)
+#age_pick_m2
 
 #Parámetros
-coefs <- coef(modelo2)
-mean_hours <- mean(base$totalHoursWorked, na.rm = TRUE)
-mean_relab <- mean(base$relab, na.rm = TRUE)
+coefs <- coef(modelo2) 
+mean_hours <- mean(base2$totalHoursWorked, na.rm = TRUE) 
+#mean_relab <- mean(base$relab, na.rm = TRUE)
 
-base$yhatm2 <- 
-  coefs["(Intercept)"] +
-  coefs["age"] * base$age +
-  coefs["agecua"] * base$agecua +
-  coefs["totalHoursWorked"] * mean_hours +
-  coefs["relab"] * mean_relab
+base2 <- base %>% filter(!relab %in% c("6","7"))
 
-ggplot(base, aes(x = age, y = yhatm2)) +
-  geom_line()
+base2$yhatm2 <- predict(modelo2, newdata = base2)
 
-ggplot(base, aes(x = age)) +
+# base$yhatm2 <- 
+  # coefs["(Intercept)"] +
+  # coefs["age"] * base$age +
+  # coefs["agecua"] * base$agecua +
+  # coefs["totalHoursWorked"] * mean_hours +
+  # coefs["relab"] * mean_relab
+
+ggplot(base2,aes(x = age, y = yhatm1)) +
+ geom_line()
+
+ggplot(base2, aes(x = age)) +
   geom_line(aes(y = yhatm1), color = "blue", linewidth = 1) +
   geom_line(aes(y = yhatm2), color = "red", linewidth = 1) +
   labs(
@@ -59,7 +67,7 @@ ggplot(base, aes(x = age)) +
 
 # ====
 
-library(boot)
+library(boot) # mover a 00
 
 # Función bootstrap modelo 1
 boot_fn_m1 <- function(data, indices) {
@@ -120,11 +128,15 @@ library(ggplot2)
 ggplot(boot_df, aes(x = pico, fill = modelo)) +
   geom_density(alpha = 0.4) +
   geom_vline(xintercept = age_pick_m1, color = "blue", linetype = "dashed") +
-  geom_vline(xintercept = age_pick_m2, color = "red", linetype = "dashed") +
+ # geom_vline(xintercept = age_pick_m2, color = "red", linetype = "dashed") +
   labs(
     title = "Distribución Bootstrap de la Edad Pico",
     x = "Edad pico",
     y = "Densidad"
   ) +
   theme_minimal()
+
+
+
+
 
