@@ -1,117 +1,171 @@
 # ==============================================================
-# SECCIÓN 2: Brecha salarial (Hombres vs Mujeres)
-# ==============================================================
-
-df_difsal <- base
-
-# --------------------------------------------------------------
-# 1) Variable de género (female)
-#    Importante: en tu caso 'sex' toma valores 0/1.
-#    Este bloque crea female y verifica que queden ambos grupos.
-# --------------------------------------------------------------
-df_difsal <- df_difsal %>%
-  dplyr::mutate(
-    # Si sex es 0/1, tomamos female = 1 cuando sex == 1.
-    # (Si luego ves que las etiquetas están al revés, se cambia a sex == 0.)
-    female = dplyr::case_when(
-      sex %in% c(0, 1) ~ as.integer(sex == 1),
-      sex %in% c(1, 2) ~ as.integer(sex == 2),  # por si viene codificado 1/2
-      TRUE ~ NA_integer_
-    )
-  )
-
-cat("\nChequeo rápido de sex vs female:\n")
-print(table(df_difsal$sex,    useNA = "ifany"))
-print(table(df_difsal$female, useNA = "ifany"))
+# SECCIÓN 2: Brecha salarial (Hombres vs Mujeres) - Mínimos
+# Usa: base
+# Mantiene: modelo3 (incond) y modelo4 (cond)
+# Agrega: modelo_pref (condicional preferido para perfiles por edad y picos)
 
 # --------------------------------------------------------------
-# 2) Variable dependiente: log salario/ingreso
-#    - Usamos log(y_total_m) como en tu sección 1
-#    - log() requiere valores > 0; los <=0 se ponen como NA (esto se puede quitar)
+# 1) MODELO 3: Incondicional
 # --------------------------------------------------------------
-df_difsal <- df_difsal %>%
-  dplyr::mutate(
-    logw  = dplyr::if_else(y_total_m > 0, log(y_total_m), NA_real_),
-    age2  = age^2
-  )
-
-head(df_difsal$y_total_m)
+modelo3 <- lm(logw ~ sex, data = base)
 
 # --------------------------------------------------------------
-# 3) CONTROLES (W) PARA EL MODELO CONDICIONAL (modelo4)
-#    La idea es comparar salarios entre hombres/mujeres manteniendo constantes
-#    características "job-relevant" (Mincer-like): educación, experiencia (proxy),
-#    región y dummies ocupacionales/sectoriales. :contentReference[oaicite:2]{index=2}
-#
-#    En GEIH (tu base) usamos como controles:
-#      - age y age^2: proxy flexible de experiencia potencial
-#      - maxEducLevel: educación (categorías)
-#      - oficio: ocupación
-#      - estrato1: proxy socioeconómico / contexto (y a veces correlaciona con región)
-#      - relab: relación laboral / tipo de empleo
-#      - sizeFirm: tamaño de firma (estructura del empleo)
-#      - regSalud: régimen de salud (proxy de formalidad/condición laboral)
-#      - totalHoursWorked (si existe): intensidad laboral (si estás en wage mensual)
+# 2) MODELO 4: Condicional (controles)
 # --------------------------------------------------------------
-cat_vars <- c("maxEducLevel", "oficio", "estrato1", "relab", "sizeFirm", "regSalud")
-cat_vars <- cat_vars[cat_vars %in% names(df_difsal)]
 
-df_difsal <- df_difsal %>%
-  dplyr::mutate(dplyr::across(dplyr::all_of(cat_vars), as.factor))
-
-has_hours <- "totalHoursWorked" %in% names(df_difsal)
-
-# --------------------------------------------------------------
-# 4) MODELO 3: Brecha INCONDICIONAL
-#    logw ~ female
-# --------------------------------------------------------------
-modelo3 <- lm(logw ~ female, data = df_difsal)
-print(summary(modelo3))
-
-# % gap incondicional (aprox): 100*(exp(beta_female)-1)
-gap_incond_pct <- 100 * (exp(coef(modelo3)["female"]) - 1)
-cat("\nGap incondicional (%):", gap_incond_pct, "\n")
-
-# --------------------------------------------------------------
-# 5) MODELO 4: Brecha CONDICIONAL (con controles W) (Prergunto, pero creo si hay que quitar el else)
-# --------------------------------------------------------------
-if (has_hours) {
-  modelo4 <- lm(
-    logw ~ female + age + age2 + totalHoursWorked +
-      maxEducLevel + oficio + estrato1 + relab + sizeFirm + regSalud,
-    data = df_difsal
-  )
-} else {
-  modelo4 <- lm(
-    logw ~ female + age + age2 +
-      maxEducLevel + oficio + estrato1 + relab + sizeFirm + regSalud,
-    data = df_difsal
-  )
-}
-
-print(summary(modelo4))
-
-gap_cond_pct <- 100 * (exp(coef(modelo4)["female"]) - 1)
-cat("\nGap condicional (%):", gap_cond_pct, "\n")
-
-# --------------------------------------------------------------
-# 6) (Solo una figura simple de diagnóstico) Boxplot por género
-#    y guardado en 02_output/figures
-# --------------------------------------------------------------
-if (!dir.exists("02_output/figures")) dir.create("02_output/figures", recursive = TRUE)
-
-p_box <- ggplot2::ggplot(df_difsal, ggplot2::aes(x = as.factor(female), y = logw)) +
-  ggplot2::geom_boxplot() +
-  ggplot2::labs(
-    title = "Log ingreso (y_total_m) por género",
-    x = "female (0 = referencia, 1 = otro grupo)",
-    y = "log(y_total_m)"
-  ) +
-  ggplot2::theme_minimal()
-
-ggplot2::ggsave(
-  filename = "02_output/figures/s2_box_logw_by_gender.png",
-  plot = p_box,
-  width = 7, height = 4, dpi = 300
+modelo4 <- lm(
+  logw ~ sex + maxEducLevel + oficio + estrato1 + relab + sizeFirm + regSalud + totalHoursWorked,
+  data = base
 )
 
+# Tabla “clásica” (SE analíticos)
+stargazer(modelo3, modelo4, type = "text",
+          title = "Brecha salarial por sexo: Modelo 3 (incondicional) vs Modelo 4 (condicional)")
+
+# --------------------------------------------------------------
+# 3) Requisito (1): Tabla con t in-sample + SE analítico y bootstrap
+#     (bootstrap SE = sd de los betas bootstrap)
+# --------------------------------------------------------------
+boot_fn_m3 <- function(data, indices) {
+  d <- data[indices, ]
+  m <- lm(logw ~ sex, data = d)
+  return(coef(m)["sex"])
+}
+
+boot_fn_m4 <- function(data, indices) {
+  d <- data[indices, ]
+  m <- lm(logw ~ sex + maxEducLevel + oficio + estrato1 + relab + sizeFirm + regSalud + totalHoursWorked, data = d)
+  return(coef(m)["sex"])
+}
+
+set.seed(1013)
+boot_m3 <- boot(data = base, statistic = boot_fn_m3, R = 1000)
+boot_m4 <- boot(data = base, statistic = boot_fn_m4, R = 1000)
+
+sum_m3 <- summary(modelo3)$coefficients
+sum_m4 <- summary(modelo4)$coefficients
+
+tabla_gap <- data.frame(
+  especificacion = c("Modelo 3 (incond.)", "Modelo 4 (cond.)"),
+  beta_sex       = c(coef(modelo3)["sex"], coef(modelo4)["sex"]),
+  se_analitico   = c(sum_m3["sex","Std. Error"], sum_m4["sex","Std. Error"]),
+  t_in_sample    = c(sum_m3["sex","t value"],   sum_m4["sex","t value"]),
+  se_bootstrap   = c(sd(boot_m3$t, na.rm = TRUE), sd(boot_m4$t, na.rm = TRUE))
+)
+
+cat("\n=== Tabla requerida (beta, t in-sample, SE analítico y bootstrap) ===\n")
+print(tabla_gap)
+
+# (Opcional útil) brecha en % desde log-points
+tabla_gap$gap_pct <- 100 * (exp(tabla_gap$beta_sex) - 1)
+cat("\n=== Misma tabla con brecha en % (exp(beta)-1) ===\n")
+print(tabla_gap)
+
+# --------------------------------------------------------------
+# 4) Requisito (2) y (3): Especificación condicional preferida
+#     Necesita age y age^2, y para picos distintos por grupo:
+#     interacciones sex:age y sex:age^2
+# --------------------------------------------------------------
+modelo_pref <- lm(
+  logw ~ sex + age + agecua + sex:age + sex:agecua +
+    maxEducLevel + oficio + estrato1 + relab + sizeFirm + regSalud + totalHoursWorked,
+  data = base
+)
+
+# --------------------------------------------------------------
+# 5) Visualización: perfiles edad–ingreso predicho por sexo
+#     Fijamos controles a valores "típicos":
+#       - totalHoursWorked: media
+#       - controles categóricos: moda (valor más frecuente)
+# --------------------------------------------------------------
+mode_value <- function(x) {
+  x <- x[!is.na(x)]
+  if (length(x) == 0) return(NA)
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+age_min <- floor(min(base$age, na.rm = TRUE))
+age_max <- floor(max(base$age, na.rm = TRUE))
+
+grid <- data.frame(age = seq(age_min, age_max, by = 1))
+grid$agecua <- grid$age^2
+
+grid$totalHoursWorked <- mean(base$totalHoursWorked, na.rm = TRUE)
+
+grid$maxEducLevel <- mode_value(base$maxEducLevel)
+grid$oficio       <- mode_value(base$oficio)
+grid$estrato1     <- mode_value(base$estrato1)
+grid$relab        <- mode_value(base$relab)
+grid$sizeFirm     <- mode_value(base$sizeFirm)
+grid$regSalud     <- mode_value(base$regSalud)
+
+grid0 <- grid; grid0$sex <- 0
+grid1 <- grid; grid1$sex <- 1
+
+grid0$yhat <- predict(modelo_pref, newdata = grid0)
+grid1$yhat <- predict(modelo_pref, newdata = grid1)
+
+plot_df <- rbind(
+  transform(grid0, grupo = "sex=0"),
+  transform(grid1, grupo = "sex=1")
+)
+
+ggplot(plot_df, aes(x = age, y = yhat, color = grupo)) +
+  geom_line(linewidth = 1) +
+  labs(
+    title = "Perfiles predichos Edad–Ingreso por sexo (especificación preferida)",
+    x = "Edad",
+    y = "log(ingreso) predicho"
+  ) +
+  theme_minimal()
+
+# --------------------------------------------------------------
+# 6) Requisito (3): Edad pico por grupo + IC bootstrap
+#     Pico(sex=0): -b_age / (2*b_agecua)
+#     Pico(sex=1): -(b_age + b_sex:age) / (2*(b_agecua + b_sex:agecua))
+# --------------------------------------------------------------
+peak_from_model <- function(m) {
+  b <- coef(m)
+  
+  b_age  <- b["age"]
+  b_age2 <- b["agecua"]
+  b_i1   <- b["sex:age"]
+  b_i2   <- b["sex:agecua"]
+  
+  peak_0 <- -b_age / (2 * b_age2)
+  peak_1 <- -(b_age + b_i1) / (2 * (b_age2 + b_i2))
+  
+  c(peak_sex0 = peak_0, peak_sex1 = peak_1)
+}
+
+peaks_point <- peak_from_model(modelo_pref)
+
+cat("\n=== Edad pico (punto estimado) ===\n")
+print(peaks_point)
+
+boot_fn_peaks <- function(data, indices) {
+  d <- data[indices, ]
+  
+  m <- lm(
+    logw ~ sex + age + agecua + sex:age + sex:agecua +
+      maxEducLevel + oficio + estrato1 + relab + sizeFirm + regSalud + totalHoursWorked,
+    data = d
+  )
+  
+  pk <- peak_from_model(m)
+  pk[!is.finite(pk)] <- NA_real_
+  return(pk)
+}
+
+set.seed(1013)
+boot_peaks <- boot(data = base, statistic = boot_fn_peaks, R = 1000)
+
+colnames(boot_peaks$t) <- c("peak_sex0", "peak_sex1")
+
+ci_peak0 <- quantile(boot_peaks$t[, "peak_sex0"], probs = c(0.025, 0.975), na.rm = TRUE)
+ci_peak1 <- quantile(boot_peaks$t[, "peak_sex1"], probs = c(0.025, 0.975), na.rm = TRUE)
+
+cat("\n=== IC bootstrap (percentil 2.5%–97.5%) para edad pico ===\n")
+cat("sex=0: ", ci_peak0[1], " a ", ci_peak0[2], "\n", sep = "")
+cat("sex=1: ", ci_peak1[1], " a ", ci_peak1[2], "\n", sep = "")
