@@ -14,7 +14,7 @@ modelo3 <- lm(logw ~ sex, data = base)
 # --------------------------------------------------------------
 
 modelo4 <- lm(
-  logw ~ sex + maxEducLevel + oficio + estrato1 + relab + sizeFirm + regSalud + totalHoursWorked,
+  logw ~ sex + maxEducLevel + relab + sizeFirm + regSalud + totalHoursWorked,
   data = base
 )
 
@@ -34,7 +34,7 @@ boot_fn_m3 <- function(data, indices) {
 
 boot_fn_m4 <- function(data, indices) {
   d <- data[indices, ]
-  m <- lm(logw ~ sex + maxEducLevel + oficio + estrato1 + relab + sizeFirm + regSalud + totalHoursWorked, data = d)
+  m <- lm(logw ~ sex + maxEducLevel + relab + sizeFirm + regSalud + totalHoursWorked, data = d)
   return(coef(m)["sex"])
 }
 
@@ -68,7 +68,7 @@ print(tabla_gap)
 # --------------------------------------------------------------
 modelo_pref <- lm(
   logw ~ sex + age + agecua + sex:age + sex:agecua +
-    maxEducLevel + oficio + estrato1 + relab + sizeFirm + regSalud + totalHoursWorked,
+    maxEducLevel + relab + sizeFirm + regSalud + totalHoursWorked,
   data = base
 )
 
@@ -94,8 +94,6 @@ grid$agecua <- grid$age^2
 grid$totalHoursWorked <- mean(base$totalHoursWorked, na.rm = TRUE)
 
 grid$maxEducLevel <- mode_value(base$maxEducLevel)
-grid$oficio       <- mode_value(base$oficio)
-grid$estrato1     <- mode_value(base$estrato1)
 grid$relab        <- mode_value(base$relab)
 grid$sizeFirm     <- mode_value(base$sizeFirm)
 grid$regSalud     <- mode_value(base$regSalud)
@@ -149,7 +147,7 @@ boot_fn_peaks <- function(data, indices) {
   
   m <- lm(
     logw ~ sex + age + agecua + sex:age + sex:agecua +
-      maxEducLevel + oficio + estrato1 + relab + sizeFirm + regSalud + totalHoursWorked,
+      maxEducLevel + relab + sizeFirm + regSalud + totalHoursWorked,
     data = d
   )
   
