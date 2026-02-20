@@ -59,6 +59,9 @@ lapply(required_packages, function(pkg) {
 # SECCIÓN 3: Ejecución de scripts
 # ==============================================================
 
-source("00_webscrapping.R")
-source("01_data_cleaning.R")
-source("02_seccion1.R")
+source("01_code/00_webscrapping.R")
+source("01_code/01_data_cleaning.R")
+#source("01_code/02_seccion1.R")
+#source("01_code/02_seccion2.R")
+#source("01_code/02_seccion3.R")
+
