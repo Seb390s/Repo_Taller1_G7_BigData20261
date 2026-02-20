@@ -1,7 +1,9 @@
 #Seccion3 
-
-
-
+base <- base %>% mutate(female = 1 - sex)#ponerlo en cleaner 
+base <- base %>% 
+  filter(y_total_m > 0)
+library(caret)
+base <- base %>% mutate (logw=log(y_total_m))
 
 train <- base %>% filter(chunk %in% 1:7)
 valid <- base %>% filter(chunk %in% 8:10)
@@ -13,8 +15,8 @@ nrow(valid)
 #a) Sección 1
 #     - modelo1 <- lm(logw ~ age + agecua, data = base)
 #     - modelo2 <- lm(logw ~ age + agecua + totalHoursWorked + relab, data = base)
-#     - modelo3
-#     - modelo4
+#     - modelo3 <- lm(logw ~ female, data = base)
+#     - modelo4 <- lm(logw ~ female + age + age2 + totalHoursWorked + maxEducLevel + oficio + estrato1 + relab + sizeFirm + regSalud, data = base)
 
 #Entrenando los modelos 
 
@@ -22,17 +24,22 @@ m1_train <- lm(logw ~ age + agecua, data = train)
 
 m2_train <- lm(logw ~ age + agecua + totalHoursWorked + relab, data = train)
 
-#faltan los dos de gap género - income
+m3_train <- lm(logw ~ female, data = train)
+
+m4_train <- lm(logw ~ female + age + agecua + totalHoursWorked + maxEducLevel + oficio + estrato1 + relab + sizeFirm + regSalud, data = train)
 
 #predecir en validación
 pred_m1 <- predict(m1_train, newdata = valid)
 pred_m2 <- predict(m2_train, newdata = valid)
+pred_m3 <- predict(m3_train, newdata = valid)
+pred_m4 <- predict(m4_train, newdata = valid)
+
 
 #calcular en RMSE
-rmse_m1 <- sqrt(mean((valid$logw - pred_m1)^2))
-rmse_m2 <- sqrt(mean((valid$logw - pred_m2)^2))
-
-
+rmse_m1 <- RMSE(pred = pred_m1, obs = valid$logw)
+rmse_m2 <- RMSE(pred = pred_m2, obs = valid$logw)
+rmse_m3 <- RMSE(pred = pred_m3, obs = valid$logw)
+rmse_m4 <- RMSE(pred = pred_m4, obs = valid$logw)
 #===============================================================================
 
 #Los 5 modelos adicionales que tuve que crear (mejor un lopp con esto )
