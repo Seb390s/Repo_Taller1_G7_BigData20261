@@ -1,9 +1,10 @@
 #Seccion3 
-base <- base %>% mutate(female = 1 - sex)#ponerlo en cleaner 
-base <- base %>% 
-  filter(y_total_m > 0)
-library(caret)
-base <- base %>% mutate (logw=log(y_total_m))
+
+base <- base %>%  filter(y_total_m > 0)
+#base <- base %>% mutate (logw=log(y_total_m))
+
+
+
 
 train <- base %>% filter(chunk %in% 1:7)
 valid <- base %>% filter(chunk %in% 8:10)
@@ -36,23 +37,24 @@ pred_m4 <- predict(m4_train, newdata = valid)
 
 
 #calcular en RMSE
-rmse_m1 <- RMSE(pred = pred_m1, obs = valid$logw)
-rmse_m2 <- RMSE(pred = pred_m2, obs = valid$logw)
-rmse_m3 <- RMSE(pred = pred_m3, obs = valid$logw)
-rmse_m4 <- RMSE(pred = pred_m4, obs = valid$logw)
+rmse_m1 <- RMSE(pred = pred_m1, obs = valid$logw, na.rm = TRUE)
+rmse_m2 <- RMSE(pred = pred_m2, obs = valid$logw, na.rm = TRUE)
+rmse_m3 <- RMSE(pred = pred_m3, obs = valid$logw, na.rm = TRUE)
+rmse_m4 <- RMSE(pred = pred_m4, obs = valid$logw, na.rm = TRUE)
 #===============================================================================
+
 
 #Los 5 modelos adicionales que tuve que crear (mejor un lopp con esto )
 
-# Modelo 5
+# Modelo 5 <- lm(logw ~ age + agecua + totalHoursWorked + relab, data = base)
 
-# Modelo 6
+# Modelo 6 <- lm(logw ~ age + agecua, data = base)
 
-# Modelo 7
+# Modelo 7 <- lm(logw ~ age + agecua, data = base)
 
-# Modelo 8
+# Modelo 8 <- lm(logw ~ age + agecua, data = base)
 
-# Modelo 9
+# Modelo 9 <- lm(logw ~ age + agecua, data = base)
 
 
 #esta es la forma manual no hay forma de hacerlo con predict o algo así

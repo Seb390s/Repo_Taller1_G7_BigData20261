@@ -31,7 +31,9 @@ required_packages <- c(
   "tidyverse",
   "magrittr",
   "dplyr",
-  "stargazer"
+  "stargazer",
+  "tibble", 
+  "caret"
 )
 
 # Función auxiliar para instalar paquetes si no están disponibles ----

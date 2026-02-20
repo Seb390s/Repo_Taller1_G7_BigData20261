@@ -1,10 +1,5 @@
 #punto1
 
-base <- base %>% mutate (
-  logw=log(y_total_m),
-  agecua = age^2
-)
-
 #Modelo simple age y age al cuadrado
 modelo1 <- lm(
   logw ~ age + agecua,
