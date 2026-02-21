@@ -1,18 +1,31 @@
-# Taller 1 – BDML: Perfil Edad–Ingreso y Brecha Salarial por Género
-## Replication package (Bogotá – GEIH 2018 sample)
+# Taller 1 – Predicting Income
+## Perfil Edad–Ingreso, Brecha de Género y Predicción de Ingreso Laboral
 
 **Autores:** Sebastián Rodríguez, Hernan Yepez, Michael Salcedo  
-**Curso:** Big Data & Machine Learning (BDML) – Universidad de los Andes – 2026  
+**Curso:** Big Data and Machine Learning para Economía Aplicada (MECA 4107)  
+**Semestre:** 2026-10  
 
-Este repositorio implementa un flujo reproducible para el **Taller 1**: descarga de datos, limpieza, estimación del perfil edad–ingreso y análisis de brecha salarial por sexo, con generación automática de figuras y tablas listas para informe/presentación.
-
-**Enunciado:** *Ver* `Taller 1 enunciado BDML.pdf`.
+**Enunciado:** Ver `Taller 1 enunciado BDML.pdf`
 
 ---
 
-## Instrucciones de replicación
+# 1. Objetivo del Proyecto
 
-Para reproducir **todos** los resultados, ejecute en R:
+Este repositorio implementa un paquete completamente reproducible del **Problem Set 1: Predicting Income**.
+
+El taller está estructurado en tres secciones progresivas:
+
+1. Perfil Edad–Ingreso (teoría de capital humano)
+2. Brecha salarial por género (interpretación e inferencia)
+3. Predicción de ingreso (validación fuera de muestra e influencia)
+
+El objetivo no es únicamente que el código funcione, sino que el repositorio opere como un **replication package académico**, donde cualquier persona pueda reproducir todos los resultados ejecutando un solo comando.
+
+---
+
+# 2. Instrucciones de Replicación
+
+Para reproducir todos los resultados (tablas y figuras), ejecutar en R:
 
 ```r
-source("01_code/00_rundirectory.R")
+source("00_rundirectory.R")
