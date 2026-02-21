@@ -10,6 +10,9 @@ valid <- base %>% filter(chunk %in% 8:10)
 nrow(train)
 nrow(valid)
 
+valid <- valid %>%
+  filter(oficio %in% levels(train$oficio))
+
 
 # --------------------------------------------------------------
 # 2) Los 4 modelos de las secciones anteriores
