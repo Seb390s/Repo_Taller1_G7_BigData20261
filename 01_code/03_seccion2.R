@@ -227,8 +227,8 @@ grid0$yhat <- predict(modelo_pref, newdata = grid0)
 grid1$yhat <- predict(modelo_pref, newdata = grid1)
 
 plot_df <- rbind(
-  transform(grid0, grupo = "Hombres"),
-  transform(grid1, grupo = "Mujeres")
+  transform(grid0, grupo = "Mujeres"),
+  transform(grid1, grupo = "Hombres")
 )
 
 ggplot2::ggplot(plot_df, ggplot2::aes(x = age, y = yhat, color = grupo)) +
