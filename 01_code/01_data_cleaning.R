@@ -55,7 +55,8 @@ base <- base %>%
     oficio       = as.factor(oficio),
     estrato1     = as.factor(estrato1),
     relab        = as.factor(relab),
-    regSalud     = as.factor(regSalud)
+    regSalud     = as.factor(regSalud),
+    sizeFirm     = as.factor(sizeFirm)
   )
 
 

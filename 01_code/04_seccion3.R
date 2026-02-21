@@ -10,9 +10,6 @@ valid <- base %>% filter(chunk %in% 8:10)
 nrow(train)
 nrow(valid)
 
-
-
-
 # --------------------------------------------------------------
 # 2) Los 4 modelos de las secciones anteriores
 # --------------------------------------------------------------
