@@ -5,10 +5,14 @@
 # --------------------------------------------------------------
 set.seed(1013)
 
+base <- base %>% filter(!relab %in% c("6","7"))
+
 train <- base %>% filter(chunk %in% 1:7)
 valid <- base %>% filter(chunk %in% 8:10)
 nrow(train)
 nrow(valid)
+
+
 
 
 # --------------------------------------------------------------
@@ -162,8 +166,8 @@ for (i in 1:N) {
   LOO[i] <- new_error
 }
 #Para estas 3 obs el modelo se remegajusto por que h = 1 entonces da NA
-sum(is.na(LOO_errors))
-which(is.na(LOO_errors))
+sum(is.na(LOO))
+which(is.na(LOO))
 
 
 loo_mse <- mean(LOO, na.rm = TRUE)
@@ -174,6 +178,18 @@ loo_rmse
 cat("RMSE validación:", rmse_m9, "\n")
 cat("RMSE LOOCV:     ", loo_rmse, "\n")
 cat("Diferencia:     ", abs(loo_rmse - rmse_m9), "\n")
+
+# Tabla comparación LOOCV vs validación para LaTeX
+comparacion_table <- data.frame(
+  Métrica = c("RMSE Validación", "RMSE LOOCV", "Diferencia"),
+  Valor = round(c(rmse_m9, loo_rmse, abs(loo_rmse - rmse_m9)), 4)
+)
+
+print(xtable(comparacion_table,
+             caption = "Comparación LOOCV vs error de validación, modelo M9",
+             label = "tab:loocv"),
+      include.rownames = FALSE,
+      booktabs = TRUE)
 
 # --------------------------------------------------------------
 # 6) Observaciones más difíciles de predecir
@@ -197,21 +213,34 @@ train_used %>%
 # Nota: 3 observaciones tienen leverage = 1 (h=1), lo que genera
 # loo_error = Inf. El modelo las excluyen del análisis.
 
+# Gráfico: error LOO vs ingreso (muestra que falla en las colas)
+train_used %>%
+  filter(is.finite(loo_error)) %>%
+  ggplot(aes(x = logw, y = loo_error)) +
+  geom_point(alpha = 0.2, color = "steelblue") +
+  geom_smooth(color = "red", se = TRUE) +
+  coord_cartesian(ylim = c(0, 5)) +  # <- esto
+  labs(title = "Error de predicción LOO según nivel de ingreso",
+       x = "Log salario mensual",
+       y = "Error LOO absoluto",
+       caption = "Nota: 3 observaciones con leverage = 1 excluidas") +
+  theme_minimal()
+
 # --------------------------------------------------------------
 # 7) Medida de influencia sobre los coeficientes
 # --------------------------------------------------------------
 
 # Matrices necesarias
 X <- model.matrix(m9_train)
-e <- resid(m9_train)
-h <- hatvalues(m9_train)
-XtX_inv <- solve(t(X) %*% X)
+e <- resid(m9_train) #û_t = y_t - X_t * β̂
+h <- hatvalues(m9_train) #h_t = X_t(X'X)^{-1}X_t'
+XtX_inv <- solve(t(X) %*% X) #X_t' =  (X'X)^{-1}
 
-# Escalar por observación: e_i / (1 - h_i)
-mult <- e / (1 - h)
+# Escalar por observación: 
+mult <- e / (1 - h) #û_t / (1 - h_t)
 
-# beta(-i) - beta para cada observación (cada columna es una obs)
-beta_diff <- XtX_inv %*% t(X * mult)
+# beta(-i) - beta para cada observación (cada columna es una obs) β̂ - β̂_{(t)} = (X'X)^{-1} * X_t' * [û_t/(1-h_t)]
+beta_diff <- XtX_inv %*% t(X * mult) #(X'X)^{-1} X_t' * escalar
 
 # Norma euclidiana por observación, normalizada por número de parámetros
 influence_beta <- sqrt(colSums(beta_diff^2)) / sqrt(ncol(X))
