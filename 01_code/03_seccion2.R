@@ -33,8 +33,10 @@ modelo4 <- lm(
 )
 
 stargazer::stargazer(
-  modelo3, modelo4, type = "text",
-  title = "Brecha salarial por sexo: Modelo 3 (incondicional) vs Modelo 4 (condicional)"
+  modelo3, modelo4,
+  type  = "latex",
+  title = "Brecha salarial por sexo: Modelo 3 (incondicional) vs Modelo 4 (condicional)",
+  out   = "02_output/tables/tabla_brecha_m3_m4.tex"
 )
 
 # --------------------------------------------------------------
@@ -239,6 +241,14 @@ ggplot2::ggplot(plot_df, ggplot2::aes(x = age, y = yhat, color = grupo)) +
     y = "log(ingreso) predicho"
   ) +
   ggplot2::theme_minimal()
+
+# Guardar el último ggplot en 02_output (ruta relativa)
+ggplot2::ggsave(
+  filename = "02_output/figures/perfiles_predichos_edad_ingreso_por_sexo.png",
+  plot     = ggplot2::last_plot(),
+  width    = 10, height = 6, units = "in",
+  dpi      = 300
+)
 
 # --------------------------------------------------------------
 # 8) Requisito (3): Edad pico por grupo + IC bootstrap
