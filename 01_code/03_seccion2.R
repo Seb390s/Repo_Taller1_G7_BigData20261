@@ -105,12 +105,35 @@ boot_m4 <- boot::boot(data = base_gap, statistic = boot_fn_m4_fwl, R = 1000)
 
 # --------------------------------------------------------------
 # 5) Tabla requerida: beta, t in-sample, SE analítico y bootstrap + fit in-sample
-#    - Para el condicional, beta(sex) se toma del FWL explícito (modelo4_fwl)
-#    - Fit se reporta del modelo completo (modelo4), no del FWL.
+#    - Incondicional: de modelo3
+#    - Condicional: beta(sex) por FWL explícito
+#      SE analítico y t: deben usar sigma^2 del modelo completo (modelo4),
+#      no el summary(modelo4_fwl) (porque df y MSE cambian en lm residualizado)
 # --------------------------------------------------------------
-sum_m3      <- summary(modelo3)$coefficients
-sum_m4_fwl  <- summary(modelo4_fwl)$coefficients
 
+sum_m3 <- summary(modelo3)$coefficients
+
+# --- Beta FWL (pendiente sobre d_tilde) ---
+beta_fwl <- unname(coef(modelo4_fwl)["d_tilde_m4"])
+
+# --- SE analítico correcto para FWL (equivalente al del coef "sex" en modelo4) ---
+# Varianza residual del modelo completo (usa df correcto: n - k_full)
+sigma2_full <- summary(modelo4)$sigma^2
+
+# d_tilde_m4 ya existe (resid de sex ~ controles)
+se_fwl_correct <- sqrt(sigma2_full / sum(d_tilde_m4^2))
+
+# t in-sample correcto
+t_fwl_correct <- beta_fwl / se_fwl_correct
+
+# (Opcional) Comprobación: el SE/t deben coincidir (numéricamente) con modelo4
+cat("\n=== Check SE/t FWL vs modelo4 completo (deberían coincidir) ===\n")
+cat("SE sex (modelo4 completo): ", summary(modelo4)$coefficients["sex", "Std. Error"], "\n", sep = "")
+cat("SE sex (FWL correcto):     ", se_fwl_correct, "\n", sep = "")
+cat("t  sex (modelo4 completo): ", summary(modelo4)$coefficients["sex", "t value"], "\n", sep = "")
+cat("t  sex (FWL correcto):     ", t_fwl_correct, "\n", sep = "")
+
+# --- Fit stats (in-sample) ---
 fit_stats <- function(m) {
   s <- summary(m)
   c(
@@ -122,18 +145,23 @@ fit_stats <- function(m) {
 }
 
 fs3 <- fit_stats(modelo3)
-fs4 <- fit_stats(modelo4)
+fs4 <- fit_stats(modelo4)  # Fit se reporta del modelo completo condicional
 
+# --- SE bootstrap (ya los calculaste: boot_m3 y boot_m4) ---
+se_boot_m3 <- stats::sd(boot_m3$t, na.rm = TRUE)
+se_boot_m4 <- stats::sd(boot_m4$t, na.rm = TRUE)
+
+# --- Tabla final requerida ---
 tabla_gap <- data.frame(
   especificacion = c("Modelo 3 (incond.)", "Modelo 4 (cond., FWL)"),
-  beta_sex       = c(coef(modelo3)["sex"], coef(modelo4_fwl)["d_tilde_m4"]),
-  se_analitico   = c(sum_m3["sex","Std. Error"], sum_m4_fwl["d_tilde_m4","Std. Error"]),
-  t_in_sample    = c(sum_m3["sex","t value"],   sum_m4_fwl["d_tilde_m4","t value"]),
-  se_bootstrap   = c(stats::sd(boot_m3$t, na.rm = TRUE), stats::sd(boot_m4$t, na.rm = TRUE)),
-  n              = c(fs3["n"], fs4["n"]),
-  r2             = c(fs3["r2"], fs4["r2"]),
-  adj_r2         = c(fs3["adj_r2"], fs4["adj_r2"]),
-  rmse           = c(fs3["rmse"], fs4["rmse"])
+  beta_sex       = c(unname(coef(modelo3)["sex"]), beta_fwl),
+  se_analitico   = c(sum_m3["sex","Std. Error"],   se_fwl_correct),
+  t_in_sample    = c(sum_m3["sex","t value"],      t_fwl_correct),
+  se_bootstrap   = c(se_boot_m3,                   se_boot_m4),
+  n              = c(fs3["n"],                     fs4["n"]),
+  r2             = c(fs3["r2"],                    fs4["r2"]),
+  adj_r2         = c(fs3["adj_r2"],                fs4["adj_r2"]),
+  rmse           = c(fs3["rmse"],                  fs4["rmse"])
 )
 
 cat("\n=== Tabla requerida (beta, t in-sample, SE analítico y bootstrap + fit in-sample) ===\n")
