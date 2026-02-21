@@ -1,0 +1,8 @@
+Tabla: Verificación FWL (coeficiente de sex en el modelo condicional)
+-------------------------------------------------------------------
+Estimación                                                  Valor
+-------------------------------------------------------------------
+Modelo condicional completo (OLS con controles)              0.2125331
+FWL explícito (mismo conjunto de controles)                 0.2125331
+-------------------------------------------------------------------
+

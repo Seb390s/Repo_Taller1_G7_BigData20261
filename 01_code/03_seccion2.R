@@ -50,6 +50,14 @@ stargazer::stargazer(
   out   = "02_output/tables/tabla_brecha_m3_m4.tex"
 )
 
+# (Opcional útil) Exporta también versión en texto plano para lectura rápida en GitHub
+stargazer::stargazer(
+  modelo3, modelo4,
+  type  = "text",
+  title = "Brecha salarial por sexo: Modelo 3 (incondicional) vs Modelo 4 (condicional)",
+  out   = "02_output/tables/tabla_brecha_m3_m4.txt"
+)
+
 # --------------------------------------------------------------
 # 3.1) FWL explícito para el coeficiente de sex en el condicional
 #    Lógica:
@@ -70,14 +78,25 @@ d_tilde_m4 <- resid(m_d_m4)
 # Regresión final del paso FWL: coeficiente asociado a la parte "limpia" de sex
 modelo4_fwl <- lm(y_tilde_m4 ~ d_tilde_m4)
 
-# Verificación rápida:
-# - El coeficiente de sex del modelo completo y el obtenido por FWL deben coincidir.
-# - Los SE impresos pueden diferir si se usan grados de libertad distintos (se ajusta más adelante).
+# Verificación rápida (consola)
 cat("\n=== Verificación FWL (coeficiente de sex) ===\n")
 cat("coef sex (modelo4 completo): ", coef(modelo4)["sex"], "\n", sep = "")
 cat("coef sex (FWL explícito):    ", coef(modelo4_fwl)["d_tilde_m4"], "\n", sep = "")
 cat("SE sex (modelo4 completo):   ", summary(modelo4)$coefficients["sex", "Std. Error"], "\n", sep = "")
 cat("SE sex (FWL explícito):      ", summary(modelo4_fwl)$coefficients["d_tilde_m4", "Std. Error"], "\n", sep = "")
+
+# Exporta verificación FWL como tabla "tipo presentación" (texto plano)
+# - Mantiene el número clave mostrado en la diapositiva: coincidencia del coeficiente.
+fwl_check_txt <- paste0(
+  "Tabla: Verificación FWL (coeficiente de sex en el modelo condicional)\n",
+  "-------------------------------------------------------------------\n",
+  sprintf("%-60s %s\n", "Estimación", "Valor"),
+  "-------------------------------------------------------------------\n",
+  sprintf("%-60s %.7f\n", "Modelo condicional completo (OLS con controles)", unname(coef(modelo4)["sex"])),
+  sprintf("%-60s %.7f\n", "FWL explícito (mismo conjunto de controles)",      unname(coef(modelo4_fwl)["d_tilde_m4"])),
+  "-------------------------------------------------------------------\n"
+)
+writeLines(fwl_check_txt, con = "02_output/tables/tabla_fwl_check.txt")
 
 # --------------------------------------------------------------
 # 4) Bootstrap SE para beta(sex)
@@ -161,9 +180,7 @@ se_fwl_correct <- sqrt(sigma2_full / sum(d_tilde_m4^2))
 # Estadístico t asociado al beta condicional
 t_fwl_correct <- beta_fwl / se_fwl_correct
 
-# Check numérico:
-# - Compara SE y t calculados con los reportados por el modelo completo.
-# - Si coinciden (hasta tolerancia numérica), el armado es consistente.
+# Check numérico (consola)
 cat("\n=== Check SE/t FWL vs modelo4 completo (deberían coincidir) ===\n")
 cat("SE sex (modelo4 completo): ", summary(modelo4)$coefficients["sex", "Std. Error"], "\n", sep = "")
 cat("SE sex (FWL correcto):     ", se_fwl_correct, "\n", sep = "")
@@ -210,6 +227,32 @@ tabla_gap$gap_pct <- 100 * (exp(tabla_gap$beta_sex) - 1)
 cat("\n=== Misma tabla con brecha en % (exp(beta)-1) ===\n")
 print(tabla_gap)
 
+# Exporta tabla_gap transpuesta a texto plano (formato "presentación")
+# - La versión transpuesta facilita comparar columnas (Modelo 3 vs Modelo 4) por fila (métrica).
+# - Se mantiene únicamente salida en texto (sin CSV).
+
+tabla_gap_t <- data.frame(
+  metrica = c("beta_sex", "se_analitico", "t_in_sample", "se_bootstrap",
+              "n", "r2", "adj_r2", "rmse", "gap_pct"),
+  `Modelo 3 (incond.)`   = c(tabla_gap$beta_sex[1], tabla_gap$se_analitico[1], tabla_gap$t_in_sample[1],
+                             tabla_gap$se_bootstrap[1], tabla_gap$n[1], tabla_gap$r2[1],
+                             tabla_gap$adj_r2[1], tabla_gap$rmse[1], tabla_gap$gap_pct[1]),
+  `Modelo 4 (cond., FWL)` = c(tabla_gap$beta_sex[2], tabla_gap$se_analitico[2], tabla_gap$t_in_sample[2],
+                              tabla_gap$se_bootstrap[2], tabla_gap$n[2], tabla_gap$r2[2],
+                              tabla_gap$adj_r2[2], tabla_gap$rmse[2], tabla_gap$gap_pct[2]),
+  check.names = FALSE
+)
+
+# Escribe el texto con una cabecera corta
+tabla_gap_t_txt <- c(
+  "Tabla: Resumen comparativo (transpuesto) - brecha salarial por sexo",
+  "---------------------------------------------------------------",
+  capture.output(print(tabla_gap_t, row.names = FALSE)),
+  "---------------------------------------------------------------",
+  "Nota: gap_pct = 100*(exp(beta_sex)-1)."
+)
+
+writeLines(tabla_gap_t_txt, con = "02_output/tables/tabla_gap_transpuesta.txt")
 # --------------------------------------------------------------
 # 6) Especificación preferida para perfiles y picos
 #    - La brecha promedio no describe cómo cambia la diferencia con la edad.
@@ -302,11 +345,8 @@ ggplot2::ggsave(
 
 # --------------------------------------------------------------
 # 8) Edad pico por grupo + rangos por bootstrap
-#    Lógica:
-#    - Si el perfil es cuadrático y cóncavo, existe un máximo interior (pico).
-#    - Se calcula el pico para cada sexo usando los coeficientes relevantes.
-#    - Se valida que el pico tenga sentido: concavidad y que caiga dentro del rango observado.
-#    - Bootstrap: re-estima el modelo y recalcula el pico muchas veces para obtener rangos plausibles.
+#    - Además de imprimir en consola, se exporta una tabla texto "tipo presentación"
+#      con picos puntuales y rangos percentil por sexo y para la diferencia.
 # --------------------------------------------------------------
 peak_from_model <- function(m, age_min, age_max) {
   b <- coef(m)
@@ -386,3 +426,28 @@ ci_diff <- stats::quantile(diff_peaks, probs = c(0.025, 0.975), na.rm = TRUE)
 
 cat("\n=== IC bootstrap para diferencia de picos (sex=1 - sex=0) ===\n")
 cat("diff: ", ci_diff[1], " a ", ci_diff[2], "\n", sep = "")
+
+# Exporta tabla de picos "tipo presentación" a texto plano
+# Fix: peaks_point es un vector con nombres tipo "peak_sex0.age" / "peak_sex1.age"
+#      (por cómo se construye el vector en peak_from_model). Por eso, al indexar
+#      con "peak_sex0" devolvía NA. Aquí tomamos el valor correctamente por posición
+#      (y lo convertimos a numérico) para asegurar que siempre se impriman.
+
+peak0 <- as.numeric(peaks_point[1])
+peak1 <- as.numeric(peaks_point[2])
+peakd <- peak1 - peak0
+
+peak_tbl_txt <- paste0(
+  "Tabla: Edad del máximo ingreso predicho por sexo (remuestreo percentil)\n",
+  "-----------------------------------------------------------------------\n",
+  sprintf("%-45s %-18s %-18s %-18s\n", "Resultado", "Mujeres (sex=0)", "Hombres (sex=1)", "Diferencia (1-0)"),
+  "-----------------------------------------------------------------------\n",
+  sprintf("%-45s %-18.3f %-18.3f %-18.3f\n", "Edad del máximo (punto estimado)", peak0, peak1, peakd),
+  sprintf("%-45s [%-6.3f, %-6.3f]    [%-6.3f, %-6.3f]    %s\n",
+          "Rango plausible para la edad del máximo", ci_peak0[1], ci_peak0[2], ci_peak1[1], ci_peak1[2], "---"),
+  sprintf("%-45s %s %-18s [%-6.3f, %-6.3f]\n",
+          "Rango plausible para la diferencia de máximos", "---", "---", ci_diff[1], ci_diff[2]),
+  "-----------------------------------------------------------------------\n"
+)
+
+writeLines(peak_tbl_txt, con = "02_output/tables/tabla_edad_maximo.txt")

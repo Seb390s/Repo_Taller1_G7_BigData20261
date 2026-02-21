@@ -1,0 +1,9 @@
+Tabla: Edad del máximo ingreso predicho por sexo (remuestreo percentil)
+-----------------------------------------------------------------------
+Resultado                                     Mujeres (sex=0)    Hombres (sex=1)    Diferencia (1-0)  
+-----------------------------------------------------------------------
+Edad del máximo (punto estimado)             45.764             51.589             5.825             
+Rango plausible para la edad del máximo      [44.479, 47.283]    [49.909, 53.537]    ---
+Rango plausible para la diferencia de máximos --- ---                [3.621 , 8.001 ]
+-----------------------------------------------------------------------
+
