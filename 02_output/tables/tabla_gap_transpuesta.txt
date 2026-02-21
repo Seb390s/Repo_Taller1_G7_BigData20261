@@ -1,0 +1,14 @@
+Tabla: Resumen comparativo (transpuesto) - brecha salarial por sexo
+---------------------------------------------------------------
+      metrica Modelo 3 (incond.) Modelo 4 (cond., FWL)
+     beta_sex       2.506367e-01          2.125331e-01
+ se_analitico       1.522183e-02          1.170438e-02
+  t_in_sample       1.646561e+01          1.815842e+01
+ se_bootstrap       1.490101e-02          1.167526e-02
+            n       1.341000e+04          1.341000e+04
+           r2       1.981972e-02          4.677220e-01
+       adj_r2       1.974662e-02          4.668871e-01
+         rmse       8.808820e-01          6.491335e-01
+      gap_pct       2.848432e+01          2.368070e+01
+---------------------------------------------------------------
+Nota: gap_pct = 100*(exp(beta_sex)-1).
