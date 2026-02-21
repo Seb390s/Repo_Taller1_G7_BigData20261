@@ -33,7 +33,9 @@ required_packages <- c(
   "dplyr",
   "stargazer",
   "tibble", 
-  "caret"
+  "caret",
+  "xtable"
+  
 )
 
 # Función auxiliar para instalar paquetes si no están disponibles ----
