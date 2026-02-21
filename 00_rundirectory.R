@@ -36,6 +36,7 @@ required_packages <- c(
   "caret"
 )
 
+
 # Función auxiliar para instalar paquetes si no están disponibles ----
 install_if_missing <- function(packages) {
   new_packages <- packages[!(packages %in% installed.packages()[,"Package"])]
@@ -54,6 +55,8 @@ lapply(required_packages, function(pkg) {
   library(pkg, character.only = TRUE)
 })
 
+library(boot) 
+library(ggplot2)
 
 # ==============================================================
 # SECCIÓN 3: Ejecución de scripts
