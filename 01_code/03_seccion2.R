@@ -126,7 +126,7 @@ se_fwl_correct <- sqrt(sigma2_full / sum(d_tilde_m4^2))
 # t in-sample correcto
 t_fwl_correct <- beta_fwl / se_fwl_correct
 
-# (Opcional) Comprobación: el SE/t deben coincidir (numéricamente) con modelo4
+# Comprobación: el SE/t deben coincidir (numéricamente) con modelo4
 cat("\n=== Check SE/t FWL vs modelo4 completo (deberían coincidir) ===\n")
 cat("SE sex (modelo4 completo): ", summary(modelo4)$coefficients["sex", "Std. Error"], "\n", sep = "")
 cat("SE sex (FWL correcto):     ", se_fwl_correct, "\n", sep = "")
@@ -227,8 +227,8 @@ grid0$yhat <- predict(modelo_pref, newdata = grid0)
 grid1$yhat <- predict(modelo_pref, newdata = grid1)
 
 plot_df <- rbind(
-  transform(grid0, grupo = "Hombres"),
-  transform(grid1, grupo = "Mujeres")
+  transform(grid0, grupo = "Mujeres"),
+  transform(grid1, grupo = "Hombres")
 )
 
 ggplot2::ggplot(plot_df, ggplot2::aes(x = age, y = yhat, color = grupo)) +
