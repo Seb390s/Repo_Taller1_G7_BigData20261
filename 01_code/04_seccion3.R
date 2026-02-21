@@ -5,8 +5,6 @@
 # --------------------------------------------------------------
 set.seed(1013)
 
-base <- base %>% filter(!relab %in% c("6","7"))
-
 train <- base %>% filter(chunk %in% 1:7)
 valid <- base %>% filter(chunk %in% 8:10)
 nrow(train)

@@ -36,12 +36,10 @@ stargazer(modelo2, type = "text")
 
 #Parámetros
 coefs <- coef(modelo2) 
-mean_hours <- mean(base2$totalHoursWorked, na.rm = TRUE) 
+mean_hours <- mean(base$totalHoursWorked, na.rm = TRUE) 
 #mean_relab <- mean(base$relab, na.rm = TRUE)
 
-base2 <- base %>% filter(!relab %in% c("6","7"))
-
-base2$yhatm2 <- predict(modelo2, newdata = base2)
+base$yhatm2 <- predict(modelo2, newdata = base)
 
 # base$yhatm2 <- 
   # coefs["(Intercept)"] +
@@ -50,10 +48,10 @@ base2$yhatm2 <- predict(modelo2, newdata = base2)
   # coefs["totalHoursWorked"] * mean_hours +
   # coefs["relab"] * mean_relab
 
-ggplot(base2,aes(x = age, y = yhatm1)) +
+ggplot(base,aes(x = age, y = yhatm1)) +
  geom_line()
 
-ggplot(base2, aes(x = age)) +
+ggplot(base, aes(x = age)) +
   geom_line(aes(y = yhatm1), color = "blue", linewidth = 1) +
   geom_line(aes(y = yhatm2), color = "red", linewidth = 1) +
   labs(

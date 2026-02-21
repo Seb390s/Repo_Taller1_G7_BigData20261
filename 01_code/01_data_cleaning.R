@@ -31,6 +31,23 @@ base <- base %>% mutate (
 # 4) Correción categoricas 
 # --------------------------------------------------------------
 
+# VARIABLE RELAB NIVELES 6 Y 7
+#En la exploración tuvimos problemas con los niveles 6 y 7 de la variable categorica Relab,
+#Al revisar con más detalle estas observaciones tienen NA sistemático en la variable de ingreso
+prueba <- base %>%
+  select(y_total_m,  relab, female)
+prueba <- prueba %>% filter(relab == 6 | relab == 7)
+nrow(prueba)
+sum(is.na(prueba))
+#luego revisamos bien el diccionario de variables y estos dos niveles corresponden a trabajo no remunerado
+#particularmente, 6 =Trabajador familiar sin remuneración, 7=Trabajador sin remuneración en empresas o negocios
+#de otros hogares, por tal motivo decidimos eliminar estos dos niveles, pues no hay una variable dependiente que estimar 
+#o con la cual podamos comparar una predicción.
+
+base <- base %>%
+  filter(!relab %in% c(6,7)) #Eliminandolas 
+
+#Haciendolas categoricas
 base <- base %>%
   mutate(
     maxEducLevel = as.factor(maxEducLevel),
@@ -40,6 +57,8 @@ base <- base %>%
     relab        = as.factor(relab),
     regSalud     = as.factor(regSalud)
   )
+
+
 
 # --------------------------------------------------------------
 # 3) Tabla con NAs y tipo de variable
