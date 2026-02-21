@@ -109,7 +109,7 @@ boot_m4 <- boot::boot(data = base_gap, statistic = boot_fn_m4_fwl, R = 1000)
 #    - Condicional: beta(sex) por FWL explícito
 #      SE analítico y t: deben usar sigma^2 del modelo completo (modelo4),
 #      no el summary(modelo4_fwl) (porque df y MSE cambian en lm residualizado)
-# --------------------------------------------------------------
+# ---------------------------------------------------------------
 
 sum_m3 <- summary(modelo3)$coefficients
 
