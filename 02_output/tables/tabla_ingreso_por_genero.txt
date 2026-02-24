@@ -1,0 +1,9 @@
+INGRESO POR GENERO
+==================
+
+# A tibble: 2 × 9
+  genero n_obs n_ingresos ingreso_media ingreso_mediana ingreso_sd ingreso_p25
+  <chr>  <dbl>      <dbl>         <dbl>           <dbl>      <dbl>       <dbl>
+1 Hombre  8616       7697      1740697.        1050000    2519422.      820857
+2 Mujer   7539       6935      1499417.         932786.   2342976.      700000
+# ℹ 2 more variables: ingreso_p75 <dbl>, edad_media <dbl>

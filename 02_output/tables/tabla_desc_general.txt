@@ -1,0 +1,9 @@
+TABLA DESCRIPTIVA GENERAL
+=========================
+
+# A tibble: 1 × 14
+  n_obs n_ingreso_no_na n_ingreso_na edad_media edad_mediana edad_sd ingreso_media
+  <dbl>           <dbl>        <dbl>      <dbl>        <dbl>   <dbl>         <dbl>
+1 16155           14632         1523       39.6           38    13.3      1626340.
+# ℹ 7 more variables: ingreso_mediana <dbl>, ingreso_sd <dbl>, ingreso_p25 <dbl>,
+#   ingreso_p75 <dbl>, ingreso_p90 <dbl>, horas_media <dbl>, horas_mediana <dbl>
