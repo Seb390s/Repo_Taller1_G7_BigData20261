@@ -77,308 +77,144 @@ summary_table <- tibble(
 cat("\nResumen completo de variables:\n")
 print(summary_table)
 
+
 # ==============================================================
-# 5) DESCRIPTIVAS (TABLAS Y GRAFICAS)
-# Este bloque se agrega DESPUES del cleaner original (sin alterarlo)
+# SECCIÓN 2: ESTADÍSTICAS DESCRIPTIVAS
+# base nunca se modifica — todo trabaja sobre subconjuntos locales
 # ==============================================================
 
 # --------------------------------------------------------------
-# 5.1) Base auxiliar para descriptivas (solo agrega etiquetas)
+# 2.1) Tabla descriptiva
 # --------------------------------------------------------------
-base_desc <- base %>%
-  mutate(
-    genero = case_when(
-      sex == 1 ~ "Hombre",
-      sex == 0 ~ "Mujer",
-      TRUE     ~ "Sin dato"
-    ),
-    rango_edad = cut(
-      age,
-      breaks = c(18, 25, 35, 45, 55, 65, Inf),
-      labels = c("19-25", "26-35", "36-45", "46-55", "56-65", "66+"),
-      right = TRUE,
-      include.lowest = FALSE
-    )
-  )
-
-# --------------------------------------------------------------
-# 5.2) Tabla descriptiva general (muestra e ingreso)
-# --------------------------------------------------------------
-tabla_desc_general <- base_desc %>%
+tabla_desc <- base %>%
   summarise(
-    n_obs                 = n(),
-    n_ingreso_no_na       = sum(!is.na(y_total_m)),
-    n_ingreso_na          = sum(is.na(y_total_m)),
-    edad_media            = mean(age, na.rm = TRUE),
-    edad_mediana          = median(age, na.rm = TRUE),
-    edad_sd               = sd(age, na.rm = TRUE),
-    ingreso_media         = mean(y_total_m, na.rm = TRUE),
-    ingreso_mediana       = median(y_total_m, na.rm = TRUE),
-    ingreso_sd            = sd(y_total_m, na.rm = TRUE),
-    ingreso_p25           = quantile(y_total_m, 0.25, na.rm = TRUE),
-    ingreso_p75           = quantile(y_total_m, 0.75, na.rm = TRUE),
-    ingreso_p90           = quantile(y_total_m, 0.90, na.rm = TRUE),
-    horas_media           = mean(totalHoursWorked, na.rm = TRUE),
-    horas_mediana         = median(totalHoursWorked, na.rm = TRUE)
-  )
+    `Log salario (media)`                    = round(mean(logw, na.rm = TRUE), 1),
+    `Log salario (sd)`                       = round(sd(logw, na.rm = TRUE), 1),
+    `Log salario (p25)`                      = round(quantile(logw, 0.25, na.rm = TRUE), 1),
+    `Log salario (p75)`                      = round(quantile(logw, 0.75, na.rm = TRUE), 1),
+    `Edad (media)`                           = round(mean(age, na.rm = TRUE), 1),
+    `Edad (sd)`                              = round(sd(age, na.rm = TRUE), 1),
+    `Horas trabajadas (media)`               = round(mean(totalHoursWorked, na.rm = TRUE), 1),
+    `Horas trabajadas (sd)`                  = round(sd(totalHoursWorked, na.rm = TRUE), 1),
+    `Antigüedad en el empleo, meses (media)` = round(mean(p6426, na.rm = TRUE), 1),
+    `Antigüedad en el empleo, meses (sd)`    = round(sd(p6426, na.rm = TRUE), 1),
+    `Proporción mujeres (%)`                 = round(100 * mean(female, na.rm = TRUE), 1),
+    `Proporción salud contributiva (%)`      = round(100 * mean(regSalud == "1", na.rm = TRUE), 1),
+    `N observaciones`                        = n()
+  ) %>%
+  pivot_longer(everything(), names_to = "Variable", values_to = "Valor")
 
-cat("\n================ TABLA DESCRIPTIVA GENERAL ================\n")
-print(tabla_desc_general)
+print(xtable(tabla_desc,
+             caption = "Estadísticas descriptivas de la muestra (GEIH Bogotá 2018)",
+             label   = "tab:desc",
+             digits  = c(0, 0, 1)),
+      include.rownames = FALSE,
+      booktabs = TRUE)
+
+print(xtable(tabla_desc,
+             caption = "Estadísticas descriptivas de la muestra (GEIH Bogotá 2018)",
+             label   = "tab:desc",
+             digits  = c(0, 0, 1)),
+      include.rownames = FALSE,
+      booktabs = TRUE,
+      file = "02_output/tables/descriptivas.tex")
 
 # --------------------------------------------------------------
-# 5.3) Distribución de relab (frecuencia y porcentaje)
+# 2.2) Distribución del log salario
 # --------------------------------------------------------------
-tabla_relab_dist <- base_desc %>%
-  count(relab, name = "n") %>%
+ggplot(base, aes(x = logw)) +
+  geom_histogram(aes(y = ..density..), bins = 50,
+                 fill = "#2c5f8a", alpha = 0.7, color = NA) +
+  geom_density(color = "red", linewidth = 0.8) +
+  geom_vline(xintercept = mean(base$logw, na.rm = TRUE),
+             linetype = "dashed", color = "darkred", linewidth = 0.8) +
+  annotate("text",
+           x = mean(base$logw, na.rm = TRUE) + 0.3,
+           y = 0.45,
+           label = paste0("Media = ", round(mean(base$logw, na.rm = TRUE), 2)),
+           color = "darkred", size = 3.5, hjust = 0) +
+  labs(title = "Distribución del log salario mensual",
+       x = "Log salario mensual",
+       y = "Densidad") +
+  theme_minimal()
+
+ggsave("02_output/figures/dist_logw.jpg", width = 8, height = 5, dpi = 300)
+
+# --------------------------------------------------------------
+# 2.3) Composición por relación laboral
+# --------------------------------------------------------------
+etiquetas_relab <- c(
+  "1" = "Obrero empresa particular",
+  "2" = "Obrero gobierno",
+  "3" = "Empleado doméstico",
+  "4" = "Cuenta propia",
+  "5" = "Patrón o empleador",
+  "9" = "Otro"
+)
+
+base %>%
+  filter(!is.na(relab), as.character(relab) %in% names(etiquetas_relab)) %>%
+  mutate(relab_label = etiquetas_relab[as.character(relab)]) %>%
+  count(relab_label) %>%
   mutate(
-    porcentaje = 100 * n / sum(n)
+    porcentaje  = 100 * n / sum(n),
+    relab_label = reorder(relab_label, porcentaje)
   ) %>%
-  arrange(desc(n))
-
-cat("\n================ DISTRIBUCION DE RELAB ====================\n")
-print(tabla_relab_dist)
-
-# --------------------------------------------------------------
-# 5.4) Salarios por relab (datos crudos y_total_m)
-# --------------------------------------------------------------
-tabla_salario_relab <- base_desc %>%
-  group_by(relab) %>%
-  summarise(
-    n_ingresos       = sum(!is.na(y_total_m)),
-    ingreso_media    = mean(y_total_m, na.rm = TRUE),
-    ingreso_mediana  = median(y_total_m, na.rm = TRUE),
-    ingreso_sd       = sd(y_total_m, na.rm = TRUE),
-    ingreso_p25      = quantile(y_total_m, 0.25, na.rm = TRUE),
-    ingreso_p75      = quantile(y_total_m, 0.75, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  arrange(relab)
-
-cat("\n================ SALARIOS POR RELAB =======================\n")
-print(tabla_salario_relab)
-
-# --------------------------------------------------------------
-# 5.5) Rangos de edad (frecuencia + porcentaje)
-# --------------------------------------------------------------
-tabla_rangos_edad <- base_desc %>%
-  count(rango_edad, name = "n") %>%
-  mutate(
-    porcentaje = 100 * n / sum(n)
-  ) %>%
-  arrange(rango_edad)
-
-cat("\n================ RANGOS DE EDAD ===========================\n")
-print(tabla_rangos_edad)
-
-# --------------------------------------------------------------
-# 5.6) Ingreso por genero (tabla resumen)
-# --------------------------------------------------------------
-tabla_ingreso_genero <- base_desc %>%
-  group_by(genero) %>%
-  summarise(
-    n_obs            = n(),
-    n_ingresos       = sum(!is.na(y_total_m)),
-    ingreso_media    = mean(y_total_m, na.rm = TRUE),
-    ingreso_mediana  = median(y_total_m, na.rm = TRUE),
-    ingreso_sd       = sd(y_total_m, na.rm = TRUE),
-    ingreso_p25      = quantile(y_total_m, 0.25, na.rm = TRUE),
-    ingreso_p75      = quantile(y_total_m, 0.75, na.rm = TRUE),
-    edad_media       = mean(age, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  arrange(genero)
-
-cat("\n================ INGRESO POR GENERO =======================\n")
-print(tabla_ingreso_genero)
-
-# --------------------------------------------------------------
-# 5.7) (Opcional) Redondear tablas para reporte
-# --------------------------------------------------------------
-tabla_desc_general_r <- tabla_desc_general %>%
-  mutate(across(where(is.numeric), ~ round(.x, 2)))
-
-tabla_relab_dist_r <- tabla_relab_dist %>%
-  mutate(porcentaje = round(porcentaje, 2))
-
-tabla_salario_relab_r <- tabla_salario_relab %>%
-  mutate(across(where(is.numeric), ~ round(.x, 2)))
-
-tabla_rangos_edad_r <- tabla_rangos_edad %>%
-  mutate(porcentaje = round(porcentaje, 2))
-
-tabla_ingreso_genero_r <- tabla_ingreso_genero %>%
-  mutate(across(where(is.numeric), ~ round(.x, 2)))
-
-cat("\n================ TABLAS REDONDEADAS (REPORTE) =============\n")
-print(tabla_relab_dist_r)
-print(tabla_salario_relab_r)
-print(tabla_rangos_edad_r)
-print(tabla_ingreso_genero_r)
-
-# ==============================================================
-# 6) GRAFICAS DESCRIPTIVAS
-# ==============================================================
-
-# Para mejorar lectura de boxplots sin eliminar datos, se usa un tope visual (p99)
-tope_visual <- quantile(base_desc$y_total_m, 0.99, na.rm = TRUE)
-
-# --------------------------------------------------------------
-# 6.1) Histograma de ingresos (datos crudos)
-# --------------------------------------------------------------
-g_ingreso_hist <- base_desc %>%
-  filter(!is.na(y_total_m), y_total_m >= 0) %>%
-  ggplot(aes(x = y_total_m)) +
-  geom_histogram(bins = 50) +
-  labs(
-    title = "Distribución del ingreso laboral mensual (y_total_m)",
-    x = "Ingreso laboral mensual",
-    y = "Frecuencia"
-  ) +
+  ggplot(aes(x = relab_label, y = porcentaje)) +
+  geom_col(fill = "#2c5f8a", alpha = 0.8) +
+  geom_text(aes(label = paste0(round(porcentaje, 1), "%")),
+            hjust = -0.1, size = 3.5) +
+  coord_flip(ylim = c(0, 65)) +
+  labs(title = "Composición Relación Laboral",
+       x = "",
+       y = "Porcentaje (%)") +
   theme_minimal()
 
-print(g_ingreso_hist)
+ggsave("02_output/figures/composicion_relab.jpg", width = 8, height = 5, dpi = 300)
 
 # --------------------------------------------------------------
-# 6.2) Histograma de ingresos en escala log10 (solo visual)
-# Útil porque los ingresos suelen estar muy sesgados a la derecha.
+# 2.4) Perfil salario-edad por género
 # --------------------------------------------------------------
-g_ingreso_hist_log <- base_desc %>%
-  filter(!is.na(y_total_m), y_total_m > 0) %>%
-  ggplot(aes(x = y_total_m)) +
-  geom_histogram(bins = 50) +
-  scale_x_log10(labels = scales::label_comma()) +
-  labs(
-    title = "Distribución del ingreso (escala log10 en eje X)",
-    x = "Ingreso laboral mensual (escala log10)",
-    y = "Frecuencia"
-  ) +
-  theme_minimal()
+base %>%
+  filter(!is.na(female), !is.na(age), !is.na(logw)) %>%
+  mutate(genero = ifelse(female == 1, "Mujer", "Hombre")) %>%
+  ggplot(aes(x = age, y = logw, color = genero)) +
+  geom_smooth(method = "loess", se = TRUE, linewidth = 1.2, alpha = 0.15) +
+  scale_color_manual(values = c("Hombre" = "#2c5f8a", "Mujer" = "#c0392b")) +
+  labs(title = "Perfil salario-edad por género",
+       x = "Edad",
+       y = "Log salario mensual",
+       color = "") +
+  theme_minimal() +
+  theme(legend.position = "top")
 
-print(g_ingreso_hist_log)
-
-# --------------------------------------------------------------
-# 6.3) Boxplot de ingreso por relab (datos crudos, con tope visual)
-# --------------------------------------------------------------
-g_ingreso_relab <- base_desc %>%
-  filter(!is.na(y_total_m), !is.na(relab), y_total_m >= 0) %>%
-  ggplot(aes(x = relab, y = y_total_m)) +
-  geom_boxplot(outlier.alpha = 0.2) +
-  coord_cartesian(ylim = c(0, tope_visual)) +
-  labs(
-    title = "Ingreso laboral por relab (boxplot, tope visual p99)",
-    x = "relab",
-    y = "Ingreso laboral mensual"
-  ) +
-  theme_minimal()
-
-print(g_ingreso_relab)
+ggsave("02_output/figures/perfil_edad_genero.jpg", width = 8, height = 5, dpi = 300)
 
 # --------------------------------------------------------------
-# 6.4) Barras de rangos de edad
+# 2.5) Log salario por nivel educativo (boxplot)
 # --------------------------------------------------------------
-g_rangos_edad <- tabla_rangos_edad %>%
-  ggplot(aes(x = rango_edad, y = n)) +
-  geom_col() +
-  labs(
-    title = "Distribución por rangos de edad",
-    x = "Rango de edad",
-    y = "Frecuencia"
-  ) +
-  theme_minimal()
+base %>%
+  filter(!is.na(maxEducLevel), !as.character(maxEducLevel) %in% c("2", "9")) %>%
+  mutate(educ_label = case_when(
+    maxEducLevel == "1" ~ "Ninguno",
+    maxEducLevel == "3" ~ "Primaria\nincompleta",
+    maxEducLevel == "4" ~ "Primaria\ncompleta",
+    maxEducLevel == "5" ~ "Secundaria\nincompleta",
+    maxEducLevel == "6" ~ "Secundaria\ncompleta",
+    maxEducLevel == "7" ~ "Terciaria"
+  )) %>%
+  mutate(educ_label = factor(educ_label, levels = c(
+    "Ninguno", "Primaria\nincompleta", "Primaria\ncompleta",
+    "Secundaria\nincompleta", "Secundaria\ncompleta", "Terciaria"
+  ))) %>%
+  ggplot(aes(x = educ_label, y = logw, fill = educ_label)) +
+  geom_boxplot(alpha = 0.7, outlier.alpha = 0.15, outlier.size = 0.8) +
+  scale_fill_brewer(palette = "Blues") +
+  labs(title = "Log salario por nivel educativo",
+       x = "",
+       y = "Log salario mensual") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(size = 8))
 
-print(g_rangos_edad)
-
-# --------------------------------------------------------------
-# 6.5) Boxplot de ingreso por genero (datos crudos, con tope visual)
-# --------------------------------------------------------------
-g_ingreso_genero <- base_desc %>%
-  filter(!is.na(y_total_m), genero %in% c("Hombre", "Mujer"), y_total_m >= 0) %>%
-  ggplot(aes(x = genero, y = y_total_m)) +
-  geom_boxplot(outlier.alpha = 0.2) +
-  coord_cartesian(ylim = c(0, tope_visual)) +
-  labs(
-    title = "Ingreso laboral por género (boxplot, tope visual p99)",
-    x = "Género",
-    y = "Ingreso laboral mensual"
-  ) +
-  theme_minimal()
-
-print(g_ingreso_genero)
-
-# --------------------------------------------------------------
-# 6.6) Barras de ingreso promedio y mediano por genero
-# (muy útil para mostrar diferencia sin depender solo del boxplot)
-# --------------------------------------------------------------
-tabla_genero_long <- tabla_ingreso_genero %>%
-  filter(genero %in% c("Hombre", "Mujer")) %>%
-  select(genero, ingreso_media, ingreso_mediana) %>%
-  pivot_longer(
-    cols = c(ingreso_media, ingreso_mediana),
-    names_to = "estadistico",
-    values_to = "valor"
-  )
-
-g_genero_barras <- tabla_genero_long %>%
-  ggplot(aes(x = genero, y = valor, fill = estadistico)) +
-  geom_col(position = "dodge") +
-  labs(
-    title = "Ingreso promedio y mediano por género",
-    x = "Género",
-    y = "Ingreso laboral mensual",
-    fill = "Estadístico"
-  ) +
-  theme_minimal()
-
-print(g_genero_barras)
-
-# ==============================================================
-# 7) GUARDAR TABLAS EN TEXTO (.txt) EN 02_output/tables/
-# ==============================================================
-
-# Función auxiliar: convierte tabla/data frame a texto y la guarda
-save_table_txt <- function(tabla, file_path, titulo = NULL) {
-  txt <- c()
-  
-  if (!is.null(titulo)) {
-    txt <- c(txt, titulo, strrep("=", nchar(titulo)), "")
-  }
-  
-  # capture.output(print(...)) convierte la impresión de R en texto
-  txt <- c(txt, capture.output(print(tabla)))
-  
-  writeLines(txt, con = file_path)
-}
-
-# Guardar tablas descriptivas (redondeadas para reporte)
-save_table_txt(
-  tabla_desc_general_r,
-  "02_output/tables/tabla_desc_general.txt",
-  "TABLA DESCRIPTIVA GENERAL"
-)
-
-save_table_txt(
-  tabla_relab_dist_r,
-  "02_output/tables/tabla_relab_distribucion.txt",
-  "DISTRIBUCION DE RELAB"
-)
-
-save_table_txt(
-  tabla_salario_relab_r,
-  "02_output/tables/tabla_salario_por_relab.txt",
-  "SALARIOS POR RELAB"
-)
-
-save_table_txt(
-  tabla_rangos_edad_r,
-  "02_output/tables/tabla_rangos_edad.txt",
-  "RANGOS DE EDAD"
-)
-
-save_table_txt(
-  tabla_ingreso_genero_r,
-  "02_output/tables/tabla_ingreso_por_genero.txt",
-  "INGRESO POR GENERO"
-)
-
-cat("\nTablas guardadas en: 02_output/tables/\n")
-
+ggsave("02_output/figures/logw_por_educ.jpg", width = 9, height = 5, dpi = 300)
