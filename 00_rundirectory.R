@@ -34,7 +34,8 @@ required_packages <- c(
   "stargazer",
   "tibble", 
   "caret",
-  "xtable"
+  "xtable", 
+  "scales"
   
 )
 

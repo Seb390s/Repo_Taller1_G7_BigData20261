@@ -88,10 +88,10 @@ print(summary_table)
 # --------------------------------------------------------------
 tabla_desc <- base %>%
   summarise(
-    `Log salario (media)`                    = round(mean(logw, na.rm = TRUE), 1),
-    `Log salario (sd)`                       = round(sd(logw, na.rm = TRUE), 1),
-    `Log salario (p25)`                      = round(quantile(logw, 0.25, na.rm = TRUE), 1),
-    `Log salario (p75)`                      = round(quantile(logw, 0.75, na.rm = TRUE), 1),
+    `Salario (media)`                    = round(mean(y_total_m, na.rm = TRUE), 1),
+    `Salario (sd)`                       = round(sd(y_total_m, na.rm = TRUE), 1),
+    `Salario (p25)`                      = round(quantile(y_total_m, 0.25, na.rm = TRUE), 1),
+    `Salario (p75)`                      = round(quantile(y_total_m, 0.75, na.rm = TRUE), 1),
     `Edad (media)`                           = round(mean(age, na.rm = TRUE), 1),
     `Edad (sd)`                              = round(sd(age, na.rm = TRUE), 1),
     `Horas trabajadas (media)`               = round(mean(totalHoursWorked, na.rm = TRUE), 1),
@@ -218,3 +218,56 @@ base %>%
         axis.text.x = element_text(size = 8))
 
 ggsave("02_output/figures/logw_por_educ.jpg", width = 9, height = 5, dpi = 300)
+
+
+# --------------------------------------------------------------
+# 2.X) Parentesco con el jefe(a) por género (proporciones)
+# --------------------------------------------------------------
+
+base %>%
+  filter(!is.na(p6050), !is.na(female)) %>%
+  
+  # Crear variable género
+  mutate(genero = ifelse(female == 1, "Mujer", "Hombre")) %>%
+  
+  # Etiquetar p6050
+  mutate(parentesco = case_when(
+    p6050 == 1 ~ "Jefe(a)",
+    p6050 == 2 ~ "Cónyuge",
+    p6050 == 3 ~ "Hijo(a)",
+    p6050 == 4 ~ "Nieto(a)",
+    p6050 == 5 ~ "Otro pariente",
+    p6050 == 6 ~ "Servicio doméstico",
+    p6050 == 7 ~ "Pensionista",
+    p6050 == 8 ~ "Trabajador",
+    p6050 == 9 ~ "No pariente"
+  )) %>%
+  
+  # Definir orden correcto
+  mutate(parentesco = factor(parentesco, levels = c(
+    "Jefe(a)", "Cónyuge", "Hijo(a)", "Nieto(a)",
+    "Otro pariente", "Servicio doméstico",
+    "Pensionista", "Trabajador", "No pariente"
+  ))) %>%
+  
+  # Calcular proporciones dentro de cada parentesco
+  group_by(parentesco, genero) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(parentesco) %>%
+  mutate(prop = n / sum(n)) %>%
+  
+  # Graficar
+  ggplot(aes(x = parentesco, y = prop, fill = genero)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("Hombre" = "#2c5f8a",
+                               "Mujer" = "#c0392b")) +
+  scale_y_continuous(labels = percent_format()) +
+  labs(title = "Distribución por parentesco según género",
+       x = "Parentesco con el jefe(a) del hogar",
+       y = "Proporción por género",
+       fill = "") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "top")
+ggsave("02_output/figures/parentescojefehogar.jpg", width = 9, height = 5, dpi = 300)
+
